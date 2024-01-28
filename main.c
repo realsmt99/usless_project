@@ -3,7 +3,7 @@
 #include <string.h>
 #include "malloc.h"
 #include <stddef.h>
-
+#include <ctype.h>
 typedef struct
 {
     int student_id;
@@ -16,7 +16,7 @@ typedef struct
 typedef struct
 {
     int course_id;
-    char course_name[50];
+    char course_name[100];
     char instructor[50];
 } Course;
 
@@ -340,6 +340,47 @@ int getMaxCourseId(arbreC root)
     return root->course.course_id;
 }
 
+int get_course_id(arbreC root, char coursename[])
+{
+
+    if (root == NULL)
+    {
+        return -1;
+    }
+
+    int i = 0;
+    int j = 0;
+    while (root->course.course_name[i] != '\0' && coursename[j] != '\0')
+    {
+        if (root->course.course_name[i] != ' ' && isalpha(coursename[j]))
+        {
+            if (tolower(root->course.course_name[i]) != tolower(coursename[j]))
+            {
+                break;
+            }
+            j++;
+        }
+        i++;
+    }
+
+    if (coursename[j] == '\0')
+    {
+        return root->course.course_id;
+    }
+
+    int left = get_course_id(root->left, coursename);
+    int right = get_course_id(root->right, coursename);
+
+    if (left != -1)
+    {
+        return left;
+    }
+    else
+    {
+        return right;
+    }
+}
+
 int main()
 {
 
@@ -401,15 +442,35 @@ int main()
         if (strcmp(type, "student") == 0)
         {
             sscanf(str, "%*s %*s \"%[^\"]\" %s \"%[^\"]\"", name, age, major);
-            int y = getMaxStudentId(studentTree);
-            Student student;
-            student.student_id = y + 1;
-            strcpy(student.name, name);
-            student.age = atoi(age);
-            strcpy(student.major, major);
-            insert_student(studentTree, student);
-            serialize_students_csv(studentTree);
-            printf("Student inserted successfully\n");
+
+            int major_already_exists = get_course_id(courseTree, major);
+
+            if (major_already_exists == -1)
+            {
+                printf("Major does not exist\n");
+                return 0;
+            }
+            else
+            {
+                Student student;
+                strcpy(student.major, major);
+                int y = getMaxStudentId(studentTree);
+
+                student.student_id = y + 1;
+                strcpy(student.name, name);
+                student.age = atoi(age);
+
+                studentTree = insert_student(studentTree, student);
+
+                serialize_students_csv(studentTree);
+                Enrollement enrollementbasedonstudent = {student.student_id, major_already_exists};
+                enrollmentTree = insert_enrollment(enrollmentTree, enrollementbasedonstudent);
+                serialize_follow_course_csv(enrollmentTree);
+
+                printf("Student inserted successfully\n");
+
+                printf("follow course inserted succesfully ");
+            }
         }
         else if (strcmp(type, "course") == 0)
         {
