@@ -795,6 +795,8 @@ int main()
 
     if (strcmp(command, "insert") == 0)
     {
+        loadData(&studentTree, &courseTree, &enrollmentTree);
+
         char type[100];
         sscanf(str, "%*s %s", type);
 
